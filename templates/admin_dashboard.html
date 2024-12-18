@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Admin Dashboard</title>
+</head>
+<body>
+    <h1>Admin Dashboard</h1>
+    <h2>Welcome, {{ session['admin'] }}</h2>
+    <a href="{{ url_for('admin_logout') }}">Logout</a>
+
+    <h3>Certificate List</h3>
+    {% if message %}
+        <p>{{ message }}</p>
+    {% endif %}
+
+    <table border="1">
+        <tr>
+            <th>Certificate Code</th>
+            <th>Participant Name</th>
+            <th>Course Name</th>
+            <th>Actions</th>
+        </tr>
+        {% for cert in certificates %}
+        <tr>
+            <td>{{ cert[0] }}</td>
+            <td>{{ cert[1] }}</td>
+            <td>{{ cert[2] }}</td>
+            <td>
+                <a href="{{ url_for('edit_certificate', cert_id=cert[0]) }}">Edit</a>
+                <a href="{{ url_for('delete_certificate', cert_id=cert[0]) }}">Delete</a>
+            </td>
+        </tr>
+        {% endfor %}
+    </table>
+
+    <h3>Add New Certificate</h3>
+    <form method="POST" action="{{ url_for('generate_and_add_certificate') }}" enctype="multipart/form-data">
+      <label for="participant_name">Participant Name:</label>
+      <textarea name="participant_name" rows="3" required></textarea><br>
+
+      <label for="course_name">Course Name:</label>
+      <input type="text" name="course_name" required><br>
+
+      <label for="date_place">Date and Place:</label>
+      <input type="text" name="date_place" required><br>
+
+      <label for="course_details">Course Details:</label>
+      <input type="text" name="course_details" required><br>
+
+      <label for="coordinator_name">Coordinator Name:</label>
+      <input type="text" name="coordinator_name" required><br>
+
+      <label for="coordinator_title">Coordinator Title:</label>
+      <input type="text" name="coordinator_title" required><br>
+
+      <label for="director_name">Director Name:</label>
+      <input type="text" name="director_name" required><br>
+
+      <label for="director_title">Director Title:</label>
+      <input type="text" name="director_title" required><br>
+
+      <label for="description_text">Description Text:</label>
+      <textarea name="description_text" rows="4" required></textarea><br>
+
+      <label for="objective_text">Objective Text:</label>
+      <textarea name="objective_text" rows="4" required></textarea><br>
+
+      <label for="study_plan_items">Study Plan Items (one per line):</label>
+      <textarea name="study_plan_items" rows="4" required></textarea><br>
+
+      <label for="codigo_curso">Course Code:</label>
+      <input type="text" name="codigo_curso" required><br>
+
+      <label for="template_image">Certificate Template:</label>
+      <input type="file" name="template_image" accept="image/*" required><br>
+
+      <label for="template_second_image">Second Page Template:</label>
+      <input type="file" name="template_second_image" accept="image/*" required><br>
+
+      <label for="coordinator_signature">Coordinator Signature:</label>
+      <input type="file" name="coordinator_signature" accept="image/*" required><br>
+
+      <label for="director_signature">Director Signature:</label>
+      <input type="file" name="director_signature" accept="image/*" required><br>
+
+      <label for="output_folder">Output Folder:</label>
+      <input type="text" name="output_folder" required><br>
+
+      <button type="submit">Generate and Add Certificate</button>
+    </form>
+
+</body>
+</html>

@@ -3,7 +3,7 @@ from database_manager import insert_certificate
 import os
 
 # Define test data
-names = ["John Doe", "Jane Smith"]
+names = ["Pedro Perez", "Juan Rodriguez"]
 course = "Actualización profesional en Analítica de Datos"
 date_place = "Montevideo, 21 de noviembre de 2024"
 course_details = "45 horas lectivas | Modalidad presencial | CPI"

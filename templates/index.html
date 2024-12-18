@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Certificate Verifier</title>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; margin-top: 50px; }
+        input { padding: 10px; width: 300px; }
+        button { padding: 10px; }
+    </style>
+</head>
+<body>
+    <h1>Verify Your Certificate</h1>
+    <form method="POST">
+        <input type="text" name="certificate_code" placeholder="Enter Certificate Code" required />
+        <button type="submit">Verify</button>
+    </form>
+    {% if message %}
+        <h3>{{ message }}</h3>
+    {% endif %}
+</body>
+</html>

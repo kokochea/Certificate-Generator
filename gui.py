@@ -2,10 +2,10 @@ import tkinter as tk
 from tkinter import filedialog, messagebox
 from tkinter import ttk
 from certificate_generator import generate_certificate
-from database_manager import store_certificate_data, initialize_database
+from database_manager import insert_certificate, connect_db
 from datetime import datetime
 
-initialize_database()
+connect_db()
 
 def select_file(label):
     """Opens a file dialog and updates the label with the selected file path."""
@@ -39,7 +39,7 @@ def clear_all_fields():
     director_signature_label.config(text="Click to select file")
     output_folder_label.config(text="Click to select folder")
 
-from datetime import datetime
+
 
 def generate_certificates_gui():
     # Get user inputs
@@ -97,14 +97,7 @@ def generate_certificates_gui():
             participant_number=i
         )
 
-        # Store details in the database
-        store_certificate_data(
-            participant_name=name,
-            course_name=course_name,
-            date_of_course=datetime.now().date(),
-            participant_id=participant_id,
-            certificate_path=output_file
-        )
+        insert_certificate(name, course_name, datetime.now().date(), participant_id, output_file)
 
     messagebox.showinfo("Success", "Certificates have been generated and stored in the database!")
 

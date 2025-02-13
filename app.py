@@ -1,9 +1,12 @@
-from flask import Flask, request, render_template, redirect, url_for, session
+import zipfile
+import tempfile
+from flask import Flask, request, render_template, redirect, url_for, session, send_file
 import psycopg2
 from werkzeug.security import generate_password_hash, check_password_hash
+import os
 from certificate_generator import generate_certificate
 from database_manager import insert_certificate
-import os
+from werkzeug.utils import secure_filename
 
 app = Flask(__name__)
 
@@ -13,21 +16,102 @@ DB_CONFIG = {
     'user': 'postgres',
     'password': '0000',
     'host': 'localhost',
-    'port': '5342'
+    'port': '5433'
 }
 
-from flask import request, redirect, render_template, url_for
-import os
-from werkzeug.utils import secure_filename
+app.secret_key = 'verySecret'
+
+# First page (Login/Register)
+@app.route('/', methods=['GET'])
+def first_page():
+    return render_template('first_page.html')
+
+# Admin Registration
+@app.route('/admin/register', methods=['POST'])
+def admin_register():
+    username = request.form['username']
+    email = request.form['email']
+    password = request.form['password']
+    
+    hashed_password = generate_password_hash(password)
+
+    try:
+        conn = psycopg2.connect(**DB_CONFIG)
+        cursor = conn.cursor()
+
+        # Insert new admin user into the database
+        cursor.execute("""
+            INSERT INTO admin_users (username, email, password_hash)
+            VALUES (%s, %s, %s)
+            RETURNING id
+        """, (username, email, hashed_password))
+
+        conn.commit()
+        cursor.close()
+        conn.close()
+
+        return redirect(url_for('first_page', message="Registration successful! Please log in."))
+
+    except psycopg2.Error as e:
+        return render_template('first_page.html', message=f"Error: {e}")
+
+# Admin Login
+@app.route('/admin/login', methods=['POST'])
+def admin_login():
+    username = request.form['username']
+    password = request.form['password']
+    
+    try:
+        conn = psycopg2.connect(**DB_CONFIG)
+        cursor = conn.cursor()
+
+        # Fetch admin user
+        cursor.execute("SELECT password_hash FROM admin_users WHERE username = %s", (username,))
+        user = cursor.fetchone()
+
+        if user and check_password_hash(user[0], password):
+            session['admin'] = username
+            return redirect(url_for('admin_generator'))
+        else:
+            return render_template('first_page.html', message="Invalid credentials.")
+    except Exception as e:
+        return render_template('first_page.html', message=f"Database Error: {e}")
+    finally:
+        if cursor:
+            cursor.close()
+        if conn:
+            conn.close()
+
+#Certificate Generator
+@app.route('/admin/generator', methods=['GET'])
+def admin_generator():
+    if 'admin' not in session:
+        return redirect(url_for('first_page'))
+
+    return render_template('admin_create_certificate.html')
+
+# Admin Dashboard
+@app.route('/admin/dashboard', methods=['GET'])
+def admin_dashboard():
+    if 'admin' not in session:
+        return redirect(url_for('first_page'))
+
+    return render_template('admin_dashboard.html', message=f"Welcome, {session['admin']}!")
+
+# Admin Logout
+@app.route('/admin/logout')
+def admin_logout():
+    session.pop('admin', None)
+    return redirect(url_for('first_page'))
 
 @app.route('/admin/generate_and_add_certificate', methods=['POST'])
 def generate_and_add_certificate():
     if 'admin' not in session:
-        return redirect(url_for('admin_login'))
+        return redirect(url_for('first_page'))
 
     try:
         # Collect form data
-        participant_name = request.form['participant_name']
+        participant_names = request.form['participant_name'].strip().split("\n")  # Split multiple names
         course_name = request.form['course_name']
         date_place = request.form['date_place']
         course_details = request.form['course_details']
@@ -45,11 +129,9 @@ def generate_and_add_certificate():
         template_second_image = request.files['template_second_image']
         coordinator_signature = request.files['coordinator_signature']
         director_signature = request.files['director_signature']
-        output_folder = request.form['output_folder']
 
-        # Save files to a temporary directory
-        temp_dir = os.path.join(os.getcwd(), "temp_uploads")
-        os.makedirs(temp_dir, exist_ok=True)
+        # Save files temporarily
+        temp_dir = tempfile.mkdtemp()
 
         template_image_path = os.path.join(temp_dir, secure_filename(template_image.filename))
         template_second_image_path = os.path.join(temp_dir, secure_filename(template_second_image.filename))
@@ -61,16 +143,13 @@ def generate_and_add_certificate():
         coordinator_signature.save(coordinator_signature_path)
         director_signature.save(director_signature_path)
 
-        # Generate Certificates
-        participant_names = participant_name.split("\n")
+        # Generate certificates
+        generated_files = []
         for i, name in enumerate(participant_names, start=1):
-            # Clean participant name
-            clean_name = name.strip().replace("\r", "").replace("\n", "").replace(" ", "_")
-            
+            clean_name = name.strip().replace("\r", "").replace("\n", "").replace(" ", "_")  # Sanitize filename
             participant_id = f"{codigo_curso}-{i:03d}"
-            output_file = os.path.join(output_folder, f"{clean_name}_certificate.pdf")
+            output_file = os.path.join(temp_dir, f"{clean_name}_certificate.pdf")
 
-            # Call certificate generator
             generate_certificate(
                 name=name.strip(),
                 course_name=course_name,
@@ -91,114 +170,35 @@ def generate_and_add_certificate():
                 participant_number=i
             )
 
-
-            # Store in database
             insert_certificate(
-                participant_name=name,
+                participant_name=name.strip(),
                 course_name=course_name,
                 date_of_course=date_place,
                 participant_id=participant_id,
                 certificate_path=output_file
             )
 
-        return redirect(url_for('admin_dashboard'))
+            generated_files.append(output_file)
+
+        # Create ZIP file
+        zip_path = os.path.join(temp_dir, f"certificates_{codigo_curso}.zip")
+        with zipfile.ZipFile(zip_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
+            for file in generated_files:
+                zipf.write(file, os.path.basename(file))
+
+        # Send ZIP file for download
+        return send_file(zip_path, as_attachment=True, mimetype='application/zip')
+
+    except Exception as e:
+        return render_template('admin_create_certificate.html', message=f"Error generating certificates: {e}")
+    except Exception as e:
+        return render_template('admin_create_certificate.html', message=f"Error generating certificate: {e}")
+
+    except Exception as e:
+        return render_template('admin_create_certificate.html', message=f"Error generating certificate: {e}")
 
     except Exception as e:
         return render_template('admin_dashboard.html', message=f"Error generating certificates: {e}")
 
-
-@app.route('/admin/dashboard', methods=['GET'])
-def admin_dashboard():
-    if 'admin' not in session:
-        return redirect(url_for('admin_login'))
-
-    conn = None
-    cursor = None
-    try:
-        # Fetch all certificates
-        conn = psycopg2.connect(**DB_CONFIG)
-        cursor = conn.cursor()
-        cursor.execute("SELECT participant_id, participant_name, course_name FROM certificates")
-        certificates = cursor.fetchall()
-
-        return render_template('admin_dashboard.html', certificates=certificates)
-    except Exception as e:
-        return render_template('admin_dashboard.html', message=f"Database Error: {e}")
-    finally:
-        if cursor:
-            cursor.close()
-        if conn:
-            conn.close()
-
-
-# Admin Login
-@app.route('/admin/login', methods=['GET', 'POST'])
-def admin_login():
-    if request.method == 'POST':
-        username = request.form['username']
-        password = request.form['password']
-        try:
-            conn = psycopg2.connect(**DB_CONFIG)
-            cursor = conn.cursor()
-
-            # Fetch admin user
-            cursor.execute("SELECT password_hash FROM admin_users WHERE username = %s", (username,))
-            user = cursor.fetchone()
-
-            if user and check_password_hash(user[0], password):
-                session['admin'] = username
-                return redirect(url_for('admin_dashboard'))
-            else:
-                return render_template('admin_login.html', message="Invalid credentials.")
-        except Exception as e:
-            return render_template('admin_login.html', message=f"Database Error: {e}")
-        finally:
-            if cursor:
-                cursor.close()
-            if conn:
-                conn.close()
-    return render_template('admin_login.html')
-
-# Admin Logout
-@app.route('/admin/logout')
-def admin_logout():
-    session.pop('admin', None)
-    return redirect(url_for('admin_login'))
-
-# Verify Certificate Endpoint
-@app.route('/', methods=['GET', 'POST'])
-def verify_certificate():
-    if request.method == 'POST':
-        code = request.form['certificate_code']
-        conn = None
-        cursor = None
-        try:
-            # Connect to PostgreSQL
-            conn = psycopg2.connect(**DB_CONFIG)
-            cursor = conn.cursor()
-
-            # Query database
-            cursor.execute("SELECT participant_name, course_name FROM certificates WHERE participant_id = %s", (code,))
-            result = cursor.fetchone()
-
-            if result:
-                return render_template("index.html", message=f"Valid Certificate! Name: {result[0]}, Course: {result[1]}")
-            else:
-                return render_template("index.html", message="Invalid Certificate Code.")
-
-        except Exception as e:
-            return render_template("index.html", message=f"Database Error: {e}")
-        finally:
-            # Close cursor and connection if they were initialized
-            if cursor:
-                cursor.close()
-            if conn:
-                conn.close()
-    return render_template("index.html", message=None)
-
-app.secret_key = 'verySecret'
-
 if __name__ == '__main__':
     app.run(debug=True)
-    app.secret_key = 'verySecret'
-

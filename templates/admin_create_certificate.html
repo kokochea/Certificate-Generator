@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Dashboard</title>
+    <title>Create Certificate</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -12,60 +12,16 @@
             padding: 0;
         }
         .container {
-            width: 80%;
+            width: 60%;
             margin: 30px auto;
             background: white;
             padding: 20px;
             border-radius: 8px;
             box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
         }
-        h1, h2, h3 {
+        h1 {
             text-align: center;
             color: #333;
-        }
-        .logout {
-            display: flex;
-            justify-content: flex-end;
-            margin-bottom: 20px;
-        }
-        .logout a {
-            text-decoration: none;
-            background: #ff4b5c;
-            color: white;
-            padding: 10px 15px;
-            border-radius: 5px;
-        }
-        .logout a:hover {
-            background: #d43f4a;
-        }
-        .table-container {
-            overflow-x: auto;
-        }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin: 20px 0;
-            background: white;
-        }
-        th, td {
-            border: 1px solid #ddd;
-            padding: 10px;
-            text-align: left;
-        }
-        th {
-            background-color: #007BFF;
-            color: white;
-        }
-        tr:nth-child(even) {
-            background-color: #f2f2f2;
-        }
-        .action-links a {
-            margin-right: 10px;
-            text-decoration: none;
-            color: #007BFF;
-        }
-        .action-links a:hover {
-            text-decoration: underline;
         }
         form {
             background: #f9f9f9;
@@ -98,49 +54,32 @@
         button:hover {
             background-color: #0056b3;
         }
+        .back-link {
+            text-align: center;
+            margin-top: 15px;
+        }
+        .back-link a {
+            text-decoration: none;
+            color: #007BFF;
+            font-weight: bold;
+        }
+        .back-link a:hover {
+            text-decoration: underline;
+        }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <div class="logout">
-        <a href="{{ url_for('admin_logout') }}">Logout</a>
-    </div>
-
-    <h1>Admin Dashboard</h1>
-    <h2>Welcome, {{ session['admin'] }}</h2>
+    <h1>Create Certificate</h1>
 
     {% if message %}
         <p style="color: red; text-align: center;">{{ message }}</p>
     {% endif %}
 
-    <h3>Certificate List</h3>
-    <div class="table-container">
-        <table>
-            <tr>
-                <th>Certificate Code</th>
-                <th>Participant Name</th>
-                <th>Course Name</th>
-                <th>Actions</th>
-            </tr>
-            {% for cert in certificates %}
-            <tr>
-                <td>{{ cert[0] }}</td>
-                <td>{{ cert[1] }}</td>
-                <td>{{ cert[2] }}</td>
-                <td class="action-links">
-                    <a href="{{ url_for('edit_certificate', cert_id=cert[0]) }}">Edit</a>
-                    <a href="{{ url_for('delete_certificate', cert_id=cert[0]) }}" style="color: red;">Delete</a>
-                </td>
-            </tr>
-            {% endfor %}
-        </table>
-    </div>
-
-    <h3>Add New Certificate</h3>
-    <form method="POST" action="{{ url_for('generate_and_add_certificate') }}" enctype="multipart/form-data">
-        <label for="participant_name">Participant Name:</label>
-        <textarea name="participant_name" rows="3" required></textarea>
+    <form id="certificateForm" method="POST" action="{{ url_for('generate_and_add_certificate') }}" enctype="multipart/form-data">
+        <label for="participant_name">Participant Name(s):</label>
+        <textarea name="participant_name" rows="3" placeholder="Enter participant names, one per line" required></textarea>
 
         <label for="course_name">Course Name:</label>
         <input type="text" name="course_name" required>
@@ -187,12 +126,21 @@
         <label for="director_signature">Director Signature:</label>
         <input type="file" name="director_signature" accept="image/*" required>
 
-        <label for="output_folder">Output Folder:</label>
-        <input type="text" name="output_folder" required>
-
-        <button type="submit">Generate and Add Certificate</button>
+        <button type="submit">Generate Certificate</button>
     </form>
+
+    <div class="back-link">
+        <a href="{{ url_for('admin_dashboard') }}">Back to Dashboard</a>
+    </div>
 </div>
+
+<script>
+    document.getElementById("certificateForm").onsubmit = function() {
+        setTimeout(function() {
+            alert("Your certificate is being generated. The download will start shortly.");
+        }, 500);
+    };
+</script>
 
 </body>
 </html>

@@ -85,20 +85,20 @@ def generate_second_page(c, width, height, description_text, objective_text, stu
     objective_paragraph.drawOn(c, 50, y_position - h)
     y_position -= h + section_spacing
 
-    # # Study Plan Section
-    # study_plan_title = Paragraph(
-    #     f'''<font face="Futura" color="#ab7f28" size=18>Plan de estudios</font>''',
-    #     description_style
-    # )
-    # w, h = study_plan_title.wrap(width - 200, max_text_box_height)
-    # study_plan_title.drawOn(c, 50, y_position - h)
-    # y_position -= h + 10
+    # Study Plan Section
+    study_plan_title = Paragraph(
+        f'''<font face="Futura" color="#ab7f28" size=18>Plan de estudios</font>''',
+        description_style
+    )
+    w, h = study_plan_title.wrap(width - 200, max_text_box_height)
+    study_plan_title.drawOn(c, 50, y_position - h)
+    y_position -= h + 10
 
-    # for item in study_plan_items:
-    #     item_paragraph = Paragraph(f"• {item}", modules_style)
-    #     w, h = item_paragraph.wrap(width - 200, max_text_box_height)
-    #     item_paragraph.drawOn(c, 50, y_position - h)
-    #     y_position -= h + 2
+    for item in study_plan_items:
+        item_paragraph = Paragraph(f"• {item}", modules_style)
+        w, h = item_paragraph.wrap(width - 200, max_text_box_height)
+        item_paragraph.drawOn(c, 50, y_position - h)
+        y_position -= h + 2
 
     # Certificate Code
     certificate_code = f"Código certificado: {codigo_curso}-{participant_number:03d}"
@@ -142,36 +142,37 @@ def generate_certificate(name, course_name, date_place, course_details, coordina
     c.drawCentredString(width / 2, height - 400, course_details)
 
     # Signatures
-    # if signature_images.get("coordinator"):
-    #     max_width, max_height = 150, 65
-    #     scaled_width, scaled_height = get_scaled_dimensions(signature_images["coordinator"], max_width, max_height)
-    #     c.drawImage(signature_images["coordinator"], 200 - (scaled_width / 2), 90, width=scaled_width, height=scaled_height)
+    if signature_images.get("coordinator"):
+        max_width, max_height = 150, 65
+        scaled_width, scaled_height = get_scaled_dimensions(signature_images["coordinator"], max_width, max_height)
+        c.drawImage(signature_images["coordinator"], 200 - (scaled_width / 2), 90, width=scaled_width, height=scaled_height)
+
     if signature_images.get("director"):
         max_width, max_height = 150, 65
         scaled_width, scaled_height = get_scaled_dimensions(signature_images["director"], max_width, max_height)
-        c.drawImage(signature_images["director"], width/2 - (scaled_width / 2), 90, width=scaled_width, height=scaled_height)
+        c.drawImage(signature_images["director"], width - 200 - (scaled_width / 2), 90, width=scaled_width, height=scaled_height)
 
-    # # Left signature
-    # c.setFont("Helvetica-Bold", 15)
-    # c.setFillColor(amarilloCPI)
-    # c.drawCentredString(200, 100, "_________________________")
-    # c.setFont("Belleza", 19)
-    # c.setFillColor(text_color)
-    # c.drawCentredString(200, 77, coordinator_name)
-    # c.setFont("Open-Sans", 9)
-    # c.setFillColor(amarilloCPI)
-    # c.drawString(155, 60, coordinator_title)
+    # Left signature
+    c.setFont("Helvetica-Bold", 15)
+    c.setFillColor(amarilloCPI)
+    c.drawCentredString(200, 100, "_________________________")
+    c.setFont("Belleza", 19)
+    c.setFillColor(text_color)
+    c.drawCentredString(200, 77, coordinator_name)
+    c.setFont("Open-Sans", 9)
+    c.setFillColor(amarilloCPI)
+    c.drawString(155, 60, coordinator_title)
 
     # Right signature
     c.setFont("Helvetica-Bold", 15)
     c.setFillColor(amarilloCPI)
-    c.drawCentredString(width/2, 100, "_________________________")
+    c.drawCentredString(width-200, 100, "_________________________")
     c.setFont("Belleza", 19)
     c.setFillColor(text_color)
-    c.drawCentredString(width/2, 77, director_name)
+    c.drawCentredString(width-200, 77, director_name)
     c.setFont("Open-Sans", 9)
     c.setFillColor(amarilloCPI)
-    c.drawCentredString(width/2, 60, director_title)
+    c.drawCentredString(width-200, 60, director_title)
 
     # Finalize First Page
     c.showPage()

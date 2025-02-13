@@ -12,16 +12,35 @@
             padding: 0;
         }
         .container {
-            width: 80%;
+            width: 60%;
             margin: 30px auto;
             background: white;
             padding: 20px;
             border-radius: 8px;
             box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
-        }
-        h1, h2, h3 {
             text-align: center;
+        }
+        h1 {
             color: #333;
+        }
+        .button-container {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin: 20px 0;
+        }
+        .button-container a {
+            text-decoration: none;
+            padding: 12px 20px;
+            background-color: #007BFF;
+            color: white;
+            border-radius: 5px;
+            font-size: 16px;
+            font-weight: bold;
+            display: inline-block;
+        }
+        .button-container a:hover {
+            background-color: #0056b3;
         }
         .logout {
             display: flex;
@@ -38,66 +57,6 @@
         .logout a:hover {
             background: #d43f4a;
         }
-        .table-container {
-            overflow-x: auto;
-        }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin: 20px 0;
-            background: white;
-        }
-        th, td {
-            border: 1px solid #ddd;
-            padding: 10px;
-            text-align: left;
-        }
-        th {
-            background-color: #007BFF;
-            color: white;
-        }
-        tr:nth-child(even) {
-            background-color: #f2f2f2;
-        }
-        .action-links a {
-            margin-right: 10px;
-            text-decoration: none;
-            color: #007BFF;
-        }
-        .action-links a:hover {
-            text-decoration: underline;
-        }
-        form {
-            background: #f9f9f9;
-            padding: 20px;
-            border-radius: 5px;
-            box-shadow: 0px 0px 5px rgba(0, 0, 0, 0.1);
-        }
-        label {
-            font-weight: bold;
-            display: block;
-            margin-top: 10px;
-        }
-        input, textarea {
-            width: 100%;
-            padding: 10px;
-            margin: 5px 0;
-            border: 1px solid #ccc;
-            border-radius: 5px;
-        }
-        button {
-            width: 100%;
-            padding: 12px;
-            background-color: #007BFF;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            margin-top: 10px;
-        }
-        button:hover {
-            background-color: #0056b3;
-        }
     </style>
 </head>
 <body>
@@ -108,90 +67,17 @@
     </div>
 
     <h1>Admin Dashboard</h1>
-    <h2>Welcome, {{ session['admin'] }}</h2>
 
     {% if message %}
-        <p style="color: red; text-align: center;">{{ message }}</p>
+        <p style="color: red;">{{ message }}</p>
     {% endif %}
 
-    <h3>Certificate List</h3>
-    <div class="table-container">
-        <table>
-            <tr>
-                <th>Certificate Code</th>
-                <th>Participant Name</th>
-                <th>Course Name</th>
-                <th>Actions</th>
-            </tr>
-            {% for cert in certificates %}
-            <tr>
-                <td>{{ cert[0] }}</td>
-                <td>{{ cert[1] }}</td>
-                <td>{{ cert[2] }}</td>
-                <td class="action-links">
-                    <a href="{{ url_for('edit_certificate', cert_id=cert[0]) }}">Edit</a>
-                    <a href="{{ url_for('delete_certificate', cert_id=cert[0]) }}" style="color: red;">Delete</a>
-                </td>
-            </tr>
-            {% endfor %}
-        </table>
+    <div class="button-container">
+        <a href="{{ url_for('admin_create_certificate') }}">Generate Certificate</a>
+        <a href="{{ url_for('verify_certificate') }}">Verify Certificate</a>
+        <a href="{{ url_for('admin_view_certificates') }}">View Certificates</a>
     </div>
-
-    <h3>Add New Certificate</h3>
-    <form method="POST" action="{{ url_for('generate_and_add_certificate') }}" enctype="multipart/form-data">
-        <label for="participant_name">Participant Name:</label>
-        <textarea name="participant_name" rows="3" required></textarea>
-
-        <label for="course_name">Course Name:</label>
-        <input type="text" name="course_name" required>
-
-        <label for="date_place">Date and Place:</label>
-        <input type="text" name="date_place" required>
-
-        <label for="course_details">Course Details:</label>
-        <input type="text" name="course_details" required>
-
-        <label for="coordinator_name">Coordinator Name:</label>
-        <input type="text" name="coordinator_name" required>
-
-        <label for="coordinator_title">Coordinator Title:</label>
-        <input type="text" name="coordinator_title" required>
-
-        <label for="director_name">Director Name:</label>
-        <input type="text" name="director_name" required>
-
-        <label for="director_title">Director Title:</label>
-        <input type="text" name="director_title" required>
-
-        <label for="description_text">Description Text:</label>
-        <textarea name="description_text" rows="4" required></textarea>
-
-        <label for="objective_text">Objective Text:</label>
-        <textarea name="objective_text" rows="4" required></textarea>
-
-        <label for="study_plan_items">Study Plan Items (one per line):</label>
-        <textarea name="study_plan_items" rows="4" required></textarea>
-
-        <label for="codigo_curso">Course Code:</label>
-        <input type="text" name="codigo_curso" required>
-
-        <label for="template_image">Certificate Template:</label>
-        <input type="file" name="template_image" accept="image/*" required>
-
-        <label for="template_second_image">Second Page Template:</label>
-        <input type="file" name="template_second_image" accept="image/*" required>
-
-        <label for="coordinator_signature">Coordinator Signature:</label>
-        <input type="file" name="coordinator_signature" accept="image/*" required>
-
-        <label for="director_signature">Director Signature:</label>
-        <input type="file" name="director_signature" accept="image/*" required>
-
-        <label for="output_folder">Output Folder:</label>
-        <input type="text" name="output_folder" required>
-
-        <button type="submit">Generate and Add Certificate</button>
-    </form>
+    
 </div>
 
 </body>

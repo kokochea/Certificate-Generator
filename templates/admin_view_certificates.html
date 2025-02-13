@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>View Certificates</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            width: 80%;
+            margin: 30px auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+        h1 {
+            color: #333;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 10px;
+            text-align: left;
+        }
+        th {
+            background-color: #007BFF;
+            color: white;
+        }
+        tr:nth-child(even) {
+            background-color: #f2f2f2;
+        }
+        .action-links a {
+            text-decoration: none;
+            color: #007BFF;
+            margin-right: 10px;
+        }
+        .action-links a:hover {
+            text-decoration: underline;
+        }
+        .back-link {
+            margin-top: 20px;
+        }
+        .back-link a {
+            text-decoration: none;
+            background: #007BFF;
+            color: white;
+            padding: 10px 15px;
+            border-radius: 5px;
+        }
+        .back-link a:hover {
+            background: #0056b3;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Created Certificates</h1>
+
+    {% if certificates %}
+    <table>
+        <tr>
+            <th>Certificate ID</th>
+            <th>Participant Name</th>
+            <th>Course Name</th>
+            <th>Actions</th>
+        </tr>
+        {% for cert in certificates %}
+        <tr>
+            <td>{{ cert[0] }}</td>
+            <td>{{ cert[1] }}</td>
+            <td>{{ cert[2] }}</td>
+            <td class="action-links">
+                <a href="{{ url_for('download_certificate', cert_path=cert[3]) }}">Download</a>
+            </td>
+        </tr>
+        {% endfor %}
+    </table>
+    {% else %}
+        <p>No certificates found.</p>
+    {% endif %}
+
+    <div class="back-link">
+        <a href="{{ url_for('admin_dashboard') }}">Back to Dashboard</a>
+    </div>
+</div>
+
+</body>
+</html>

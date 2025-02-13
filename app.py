@@ -71,7 +71,7 @@ def admin_login():
 
         if user and check_password_hash(user[0], password):
             session['admin'] = username
-            return redirect(url_for('admin_generator'))
+            return redirect(url_for('admin_dashboard'))
         else:
             return render_template('first_page.html', message="Invalid credentials.")
     except Exception as e:
@@ -82,21 +82,82 @@ def admin_login():
         if conn:
             conn.close()
 
-#Certificate Generator
-@app.route('/admin/generator', methods=['GET'])
-def admin_generator():
-    if 'admin' not in session:
-        return redirect(url_for('first_page'))
-
-    return render_template('admin_create_certificate.html')
-
 # Admin Dashboard
 @app.route('/admin/dashboard', methods=['GET'])
 def admin_dashboard():
     if 'admin' not in session:
         return redirect(url_for('first_page'))
 
-    return render_template('admin_dashboard.html', message=f"Welcome, {session['admin']}!")
+    return render_template('admin_dashboard.html')
+
+@app.route('/admin/verify', methods=['GET', 'POST'])
+def verify_certificate():
+    if request.method == 'POST':
+        code = request.form['certificate_code']
+        try:
+            conn = psycopg2.connect(**DB_CONFIG)
+            cursor = conn.cursor()
+
+            # Query database for certificate
+            cursor.execute("SELECT participant_name, course_name FROM certificates WHERE participant_id = %s", (code,))
+            result = cursor.fetchone()
+
+            if result:
+                return render_template("verify_certificate.html", message=f"Valid Certificate! Name: {result[0]}, Course: {result[1]}")
+            else:
+                return render_template("verify_certificate.html", message="Invalid Certificate Code.")
+
+        except Exception as e:
+            return render_template("verify_certificate.html", message=f"Database Error: {e}")
+        finally:
+            if cursor:
+                cursor.close()
+            if conn:
+                conn.close()
+    
+    return render_template("verify_certificate.html", message=None)
+
+@app.route('/admin/create_certificate', methods=['GET'])
+def admin_create_certificate():
+    if 'admin' not in session:
+        return redirect(url_for('first_page'))
+    return render_template('admin_create_certificate.html')
+
+@app.route('/admin/view_certificates', methods=['GET'])
+def admin_view_certificates():
+    if 'admin' not in session:
+        return redirect(url_for('first_page'))
+
+    try:
+        conn = psycopg2.connect(**DB_CONFIG)
+        cursor = conn.cursor()
+
+        # Fetch all certificates
+        cursor.execute("SELECT participant_id, participant_name, course_name, certificate_path FROM certificates")
+        certificates = cursor.fetchall()
+
+        return render_template('admin_view_certificates.html', certificates=certificates)
+
+    except Exception as e:
+        return render_template('admin_dashboard.html', message=f"Database Error: {e}")
+    finally:
+        if cursor:
+            cursor.close()
+        if conn:
+            conn.close()
+
+@app.route('/admin/download_certificate')
+def download_certificate():
+    if 'admin' not in session:
+        return redirect(url_for('first_page'))
+
+    cert_path = request.args.get('cert_path')
+
+    if cert_path and os.path.exists(cert_path):
+        return send_file(cert_path, as_attachment=True)
+    else:
+        return render_template('admin_view_certificates.html', message="Error: Certificate not found.")
+
 
 # Admin Logout
 @app.route('/admin/logout')
@@ -121,7 +182,7 @@ def generate_and_add_certificate():
         director_title = request.form['director_title']
         description_text = request.form['description_text']
         objective_text = request.form['objective_text']
-        study_plan_items = request.form['study_plan_items'].splitlines()
+        study_plan_items = request.form['study_plan_items'].strip().split("\n")
         codigo_curso = request.form['codigo_curso']
 
         # File uploads
